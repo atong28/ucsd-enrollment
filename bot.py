@@ -17,7 +17,7 @@ async def lookup(interaction):
     courses = ['CSE 11', 'MATH 20C']
 
     for course in courses:
-        filepath = f'csv/{course}.csv'
+        filepath = f'../csv/{course}.csv'
         data = main.readcsv(filepath)
 
 @client.event

@@ -96,7 +96,7 @@ def get_courses() -> list[str]:
 
 
     for c in courses:
-        if not os.path.exists(f'csv/{c}.csv'):
+        if not os.path.exists(f'../csv/{c}.csv'):
             print(f'Class invalid: {c}')
             return get_courses()
         
@@ -184,8 +184,6 @@ def plot_enrollment(data, course):
         cx = rx + rectangle.get_width()/2.0
         cy = ry + rectangle.get_height()/2.0
         ax.annotate(TIMES_TO_STR[i], (cx, cy), color='#424242', weight='bold', fontsize=10, ha='center', va='center', rotation=90)
-
-
 
     plt.setp(ax.get_xticklabels(), rotation=30, horizontalalignment='right')
     plt.tight_layout()
