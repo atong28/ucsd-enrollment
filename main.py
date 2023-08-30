@@ -4,6 +4,8 @@ import re
 from matplotlib import pyplot as plt, patches
 import os
 import json
+import io
+import discord
 
 EPOCH = datetime(1970,1,1)
 VERBOSE = False
@@ -25,17 +27,17 @@ TIMES = [
 
 # String representations of each corresponding enrollment itme
 TIMES_TO_STR = [
-    "First Pass: Prio/Yr4",
-    "First Pass: Yr3",
-    "First Pass: Yr2",
-    "First Pass: Yr1",
-    "Second Pass: Yr4",
-    "Second Pass: Yr3",
-    "Second Pass: Yr2",
-    "Second Pass: Yr1",
-    "Registation closed",
-    "Classes begin",
-    "Deadline to enroll"
+    "First Pass: Seniors",
+    "First Pass: Juniors",
+    "First Pass: Sophomores",
+    "First Pass: First-Years",
+    "Second Pass: Seniors",
+    "Second Pass: Juniors",
+    "Second Pass: Sophomores",
+    "Second Pass: First-Years",
+    "Registation Closed",
+    "Classes Begin",
+    "Deadline to Enroll"
 ]
 
 # Colors for the background rectangles alternating dark, light for each pass
@@ -88,27 +90,21 @@ Enter a number (1-4) to continue: ''')
     except ValueError:
         return get_standing()
 
-# Gets the course names
-def get_courses() -> list[str]:
-    course = input('List all classes, separated by commas: ')
-
-    courses = list(map(str.strip, course.split(',')))
-
-
-    for c in courses:
-        if not os.path.exists(f'../csv/{c}.csv'):
-            print(f'Class invalid: {c}')
-            return get_courses()
-        
-    return courses
-
-def getInfo(data, standing, course):
+def get_info(data, standing, course):
     max_waitlist = 0
     total_off = 0
     total_joined = 0
     prev_data = data[0]
     full_capacity = False
     period = 0
+    prev_period_data = data[0]
+
+    capacity_time = None
+    capacity_period = None
+
+    embed = discord.Embed(title=f'Enrollment Statistics for {course}')
+
+
 
     for i in range(1, len(data)):
         prev_data = data[i - 1]
@@ -123,35 +119,33 @@ def getInfo(data, standing, course):
 
         # print milestones
         if period < len(TIMES_TO_STR) and prev_data['seconds'] < SECONDS[period] < curr_data['seconds']:
-            print(f'{TIMES_TO_STR[period]} | {course} has enrolled {curr_data["enrolled"]}/{curr_data["total"]} ({curr_data["enrolled"] * 100 // curr_data["total"]}%) with waitlist count {curr_data["waitlisted"]}')
+            if period == standing + 1 or period == standing + 5:
+                embed.add_field(name=f'{TIMES_TO_STR[period-1]}', value=f'START | Enrolled: {prev_period_data["enrolled"]}/{prev_period_data["total"]} ({prev_period_data["enrolled"] * 100 // prev_period_data["total"]}%) Waitlisted: {prev_period_data["waitlisted"]}\nEND | Enrolled: {curr_data["enrolled"]}/{curr_data["total"]} ({curr_data["enrolled"] * 100 // curr_data["total"]}%) Waitlisted: {curr_data["waitlisted"]}', inline=False)
+            elif 8 <= period <= 10:
+                 embed.add_field(name=f'{TIMES_TO_STR[period]}', value=f'Enrolled: {curr_data["enrolled"]}/{curr_data["total"]} ({curr_data["enrolled"] * 100 // curr_data["total"]}%) Waitlisted: {curr_data["waitlisted"]}', inline=False)
+            prev_period_data = curr_data
             period += 1
 
         if not full_capacity and prev_data['enrolled'] != prev_data['total'] and curr_data['enrolled'] == curr_data['total']:
-            print(f'{course} has reached capacity at time {datetime.fromtimestamp(curr_data["seconds"])} during {TIMES_TO_STR[period - 1]}')
+            capacity_time = datetime.fromtimestamp(curr_data["seconds"])
+            capacity_period = TIMES_TO_STR[period - 1]
             full_capacity = True
 
-        if not VERBOSE:
-            continue
+    if not full_capacity:
+        embed.add_field(name = 'Capacity', value=f'Capacity never reached', inline=False)
+    else:
+        embed.add_field(name='Capacity', value=f'Capacity reached at time {capacity_time} (**{capacity_period}**)', inline=False)
 
-        # if data otherwise the same, omit printing
-        if {k for k, _ in prev_data.items() ^ curr_data.items()} == {'seconds'}:
-            continue
+    embed.add_field(name='Miscellaneous Statistics', value=f''' - Maximum number of waitlists: {max_waitlist}
+ - Approximate total number of students that joined the waitlist: {total_joined}
+ - Approximate total number of students off the waitlist: {total_off}''', inline=False)
 
-        # in first pass
-        if SECONDS[standing-1] < curr_data['seconds'] < SECONDS[standing]:
-            print(f'{datetime.fromtimestamp(curr_data["seconds"])} | First pass: {course} has enrolled {curr_data["enrolled"]}/{curr_data["total"]} ({curr_data["enrolled"] * 100 // curr_data["total"]}%)')
-
-        # in second pass
-        elif SECONDS[standing+3] < curr_data['seconds'] < SECONDS[standing+4]:
-            print(f'{datetime.fromtimestamp(curr_data["seconds"])} | Second pass: {course} has enrolled {curr_data["enrolled"]}/{curr_data["total"]} ({curr_data["enrolled"] * 100 // curr_data["total"]}%) with waitlist count {curr_data["waitlisted"]}')
-
-    print(f'''Enrollment statistics for {course}:
-        - Maximum number of waitlists: {max_waitlist}
-        - Approximate total number of students that joined the waitlist: {total_joined}
-        - Approximate total number of students off the waitlist: {total_off}
-    ''')
+    return embed
 
 def plot_enrollment(data, course):
+
+    data_stream = io.BytesIO()
+
     fig, ax = plt.subplots()
 
     ax.set_title(f'Enrollment Period for {course} for Winter 2023')
@@ -165,7 +159,7 @@ def plot_enrollment(data, course):
     y_lim = max([e['total'] for e in data]) * 1.05
 
     ax.set_xticks(list(map(get_seconds, TIMES)))
-    ax.set_xticklabels(TIMES_TO_STR)
+    ax.set_xticklabels(TIMES)
     ax.set(xlim=(SECONDS[0] - 86400, SECONDS[8] + 86400),
         ylim=(0, y_lim))
 
@@ -186,10 +180,13 @@ def plot_enrollment(data, course):
         ax.annotate(TIMES_TO_STR[i], (cx, cy), color='#424242', weight='bold', fontsize=10, ha='center', va='center', rotation=90)
 
     plt.setp(ax.get_xticklabels(), rotation=30, horizontalalignment='right')
-    plt.tight_layout()
-    plt.show()
+    
+    plt.savefig(data_stream, format='png', bbox_inches="tight", dpi = 80)
+    plt.close()
+
+    return data_stream
 
 def config_load():
-    with open('config.json') as f:
+    with open(os.path.join(os.getcwd(), 'config.json')) as f:
         data = json.load(f)
-        return data['token']
+        return data
