@@ -10,3 +10,6 @@
 - Separate commands into different results
 - Implement different sections
  
+- FAQ/Help command
+
+- 

@@ -10,6 +10,8 @@ import discord
 EPOCH = datetime(1970,1,1)
 VERBOSE = False
 BUTTONS = [u"\u23EA", u"\u2B05", u"\u27A1", u"\u23E9"]
+MAX_SEARCH_RESULTS = 8
+GUILD_IDS = [1146364521234055208]
 
 # Enrollment times for 2023 Winter
 TIMES = [
@@ -67,9 +69,9 @@ def get_seconds(dt: datetime) -> int:
 SECONDS = list(map(get_seconds, TIMES))
 SECONDS_NEW = list(map(get_seconds, TIMES_NEW))
 
-# Reads the csv file and returns data in the following format:
-# [seconds, [enrolled, available, waitlisted, total]]
-def readcsv(filepath):
+## Reads the csv file and returns data in the following format:
+# - [seconds, [enrolled, available, waitlisted, total]]
+def readcsv(filepath: str) -> list[dict]:
     with open(filepath, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
         data = []
@@ -89,13 +91,24 @@ def readcsv(filepath):
             })
         return data
 
-def new_to_old(enrollment_time):
+## Converts a new enrollment time to an old (1 year ago) enrollment time
+# Returns the old time, in seconds
+def new_to_old(enrollment_time: int) -> int:
     return enrollment_time - (SECONDS_NEW[0] - SECONDS[0])
 
-def old_to_new(enrollment_time):
+## Converts an old enrollment time (1 year ago) to a new enrollment time
+# Returns the new time, in seconds
+def old_to_new(enrollment_time: int) -> int:
     return enrollment_time + (SECONDS[0] - SECONDS_NEW[0])
 
-def get_overview(data, course, enrollment_times):
+## Summarizes data and returns an overview embed with additional recommendations
+# Returns a dictionary in the following format:
+# {
+#   embed: discord.Embed | Embed message for one page
+#   recs: int            | A number 0-3 for an action to take (regarding passes)
+#   wl_recs: int         | A number 0-2 for an action to take (regarding waitlist)
+# }
+def get_overview(data: list[dict], course: str, enrollment_times: tuple(int)) -> dict:
     prev_data = data[0]
     full_capacity = False
     fptime, sptime = new_to_old(enrollment_times[0]), new_to_old(enrollment_times[1])
@@ -112,28 +125,28 @@ def get_overview(data, course, enrollment_times):
     # wl_rec = 2: unlikely
     wl_rec = 0
 
-    embed = discord.Embed(title=f'Enrollment Statistics for {course}')
-
+    embed = discord.Embed(title=f'Enrollment Statistics for **{course}**')
+    wl_msg = ''
     for i in range(1, len(data)):
         prev_data = data[i - 1]
         curr_data = data[i]
-        wl_msg = None
+        
         # show recommendations
-        if prev_data['seconds'] < fptime < curr_data['seconds']:
-            embed.add_field(name='First Pass', value=f'Approximately {curr_data["enrolled"] * 100 // curr_data["total"]}% full')
-        elif prev_data['seconds'] < sptime < curr_data['seconds']:
+        if prev_data['seconds'] < fptime <= curr_data['seconds']:
+            embed.add_field(name='First Pass', value=f'Approximately **{curr_data["enrolled"] * 100 // curr_data["total"]}%** full.', inline=True)
+        elif prev_data['seconds'] < sptime <= curr_data['seconds']:
+            embed.add_field(name='Second Pass', value=f'Approximately **{curr_data["enrolled"] * 100 // curr_data["total"]}%** full.', inline=True)
             if curr_data['waitlisted'] > 0:
                 if curr_data['waitlisted'] * 0.1 < curr_data['total']:
-                    wl_msg = 'It is likely to get in through waitlist.'
+                    wl_msg = 'It is **likely** to get in through waitlist.'
                     wl_rec = 0
                 elif curr_data['waitlisted'] * 0.15 < curr_data['total']:
-                    wl_msg = 'It is possible to get in through waitlist.'
+                    wl_msg = 'It is **possible** to get in through waitlist.'
                     wl_rec = 1
                 else:
-                    wl_msg = 'It is unlikely to get in through waitlist.'
+                    wl_msg = 'It is **unlikely** to get in through waitlist.'
                     wl_rec = 2
             else:
-                wl_msg = f'Expected Capacity: {curr_data["enrolled"] * 100 // curr_data["total"]}% full.'
                 wl_rec = 3
 
         # full milestone
@@ -146,28 +159,28 @@ def get_overview(data, course, enrollment_times):
         rec = 3
     else:
         # if capacity is reached after second pass enrollment time
-        if capacity_time > enrollment_times[1]:
-            embed.add_field(name='Capacity', value=f'Capacity reached after your second pass (on {old_to_new(capacity_time)}).\nYou can wait to second pass this course.', inline=False)
+        if get_seconds(capacity_time) > sptime:
+            embed.add_field(name='Capacity', value=f'Capacity reached after your second pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can wait to second pass this course.', inline=False)
             rec = 2
         # if capacity is reached before second pass enrollment time but after first pass enrollment time
-        elif enrollment_times[0] < capacity_time < enrollment_times[1]:
-            embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {old_to_new(capacity_time)}).\nYou can first pass this course, but\nit is unlikely that you can enroll second pass.\n{wl_msg}', inline=False)
+        elif fptime < get_seconds(capacity_time) <= sptime:
+            embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can first pass this course, but\nit is unlikely that you can enroll second pass.\n{wl_msg}', inline=False)
             rec = 1
         # if capacity is reached before first pass enrollment time
-        elif capacity_time < enrollment_times[0]:
-            embed.add_field(name='Capacity', value=f'Capacity reached before your first pass (on {old_to_new(capacity_time)}).\nYou likely cannot first pass this course.\n{wl_msg}', inline=False)
+        else:
+            embed.add_field(name='Capacity', value=f'Capacity reached before your first pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou likely cannot first pass this course.\n{wl_msg}', inline=False)
             rec = 0
 
     result = {
         'embed': embed,
         'rec': rec,
-        'wl_rec': wl_rec,
-        'capacity_time': capacity_time
+        'wl_rec': wl_rec
     }
 
     return result
 
-def get_info(data, course, standing):
+## Marks important milestones as enrollment goes on and returns an embed with details
+def get_info(data: list[dict], course: str, standing: int) -> discord.Embed:
     max_waitlist = 0
     total_off = 0
     total_joined = 0
@@ -203,7 +216,7 @@ def get_info(data, course, standing):
 
         # full milestone
         if not full_capacity and prev_data['enrolled'] != prev_data['total'] and curr_data['enrolled'] == curr_data['total']:
-            capacity_time = datetime.fromtimestamp(curr_data["seconds"])
+            capacity_time = datetime.utcfromtimestamp(curr_data["seconds"])
             capacity_period = TIMES_TO_STR[period - 1]
             full_capacity = True
 
@@ -218,7 +231,9 @@ def get_info(data, course, standing):
 
     return embed
 
-def plot_enrollment(data, course):
+## Creates a graph of the enrollment plot centered around the enrollment period
+# Returns a data stream (io.BytesIO) containing the image of the plot
+def plot_enrollment(data: list[dict], course: str) -> io.BytesIO:
 
     data_stream = io.BytesIO()
 
@@ -262,10 +277,34 @@ def plot_enrollment(data, course):
 
     return data_stream
 
+## Temporary placement
 def parse_times(time):
     pass
 
-def config_load():
+## Loads the config json file.
+# Returns a dictionary in the form
+# {
+#   token: str        | The bot token.
+#   guilds: list[int] | The list of guild ids to push out commands to.
+# }
+def config_load() -> dict:
     with open(os.path.join(os.getcwd(), 'config.json')) as f:
         data = json.load(f)
         return data
+
+## Loads the faq file.
+# Returns a list in the form
+# [
+#   {
+#       embed_data: dict
+#       keywords: List[str]
+#   }
+# ]
+def import_faq():
+    with open(os.path.join(os.getcwd(), 'faq.json')) as f:
+        data = json.load(f)
+        return data
+
+## Writes to the faq file.
+def export_faq(faq):
+    pass
