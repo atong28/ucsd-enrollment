@@ -6,6 +6,7 @@ import os
 import json
 import io
 import discord
+from dateutil.parser import parse
 
 EPOCH = datetime(1970,1,1)
 VERBOSE = False
@@ -108,7 +109,7 @@ def old_to_new(enrollment_time: int) -> int:
 #   recs: int            | A number 0-3 for an action to take (regarding passes)
 #   wl_recs: int         | A number 0-2 for an action to take (regarding waitlist)
 # }
-def get_overview(data: list[dict], course: str, enrollment_times: tuple(int)) -> dict:
+def get_overview(data: list, course: str, enrollment_times: tuple) -> dict:
     prev_data = data[0]
     full_capacity = False
     fptime, sptime = new_to_old(enrollment_times[0]), new_to_old(enrollment_times[1])
@@ -151,7 +152,7 @@ def get_overview(data: list[dict], course: str, enrollment_times: tuple(int)) ->
 
         # full milestone
         if not full_capacity and prev_data['enrolled'] != prev_data['total'] and curr_data['enrolled'] == curr_data['total']:
-            capacity_time = datetime.fromtimestamp(curr_data["seconds"])
+            capacity_time = datetime.utcfromtimestamp(curr_data["seconds"])
             full_capacity = True
 
     if not full_capacity:
@@ -160,15 +161,15 @@ def get_overview(data: list[dict], course: str, enrollment_times: tuple(int)) ->
     else:
         # if capacity is reached after second pass enrollment time
         if get_seconds(capacity_time) > sptime:
-            embed.add_field(name='Capacity', value=f'Capacity reached after your second pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can wait to second pass this course.', inline=False)
+            embed.add_field(name='Capacity', value=f'Capacity reached after your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can wait to second pass this course.', inline=False)
             rec = 2
         # if capacity is reached before second pass enrollment time but after first pass enrollment time
         elif fptime < get_seconds(capacity_time) <= sptime:
-            embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can first pass this course, but\nit is unlikely that you can enroll second pass.\n{wl_msg}', inline=False)
+            embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can first pass this course, but\nit is unlikely that you can enroll second pass.\n{wl_msg}', inline=False)
             rec = 1
         # if capacity is reached before first pass enrollment time
         else:
-            embed.add_field(name='Capacity', value=f'Capacity reached before your first pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou likely cannot first pass this course.\n{wl_msg}', inline=False)
+            embed.add_field(name='Capacity', value=f'Capacity reached before your first pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou likely cannot first pass this course.\n{wl_msg}', inline=False)
             rec = 0
 
     result = {
@@ -180,7 +181,7 @@ def get_overview(data: list[dict], course: str, enrollment_times: tuple(int)) ->
     return result
 
 ## Marks important milestones as enrollment goes on and returns an embed with details
-def get_info(data: list[dict], course: str, standing: int) -> discord.Embed:
+def get_info(data: list, course: str, standing: int) -> discord.Embed:
     max_waitlist = 0
     total_off = 0
     total_joined = 0
@@ -233,7 +234,7 @@ def get_info(data: list[dict], course: str, standing: int) -> discord.Embed:
 
 ## Creates a graph of the enrollment plot centered around the enrollment period
 # Returns a data stream (io.BytesIO) containing the image of the plot
-def plot_enrollment(data: list[dict], course: str) -> io.BytesIO:
+def plot_enrollment(data: list, course: str, fp_time: int, sp_time: int) -> io.BytesIO:
 
     data_stream = io.BytesIO()
 
@@ -270,6 +271,8 @@ def plot_enrollment(data: list[dict], course: str) -> io.BytesIO:
         cy = ry + rectangle.get_height()/2.0
         ax.annotate(TIMES_TO_STR[i], (cx, cy), color='#424242', weight='bold', fontsize=10, ha='center', va='center', rotation=90)
 
+    ax.vlines(x=[fp_time, sp_time], ymin=0, ymax=y_lim, colors='black', label='Enrollment Time')
+
     plt.setp(ax.get_xticklabels(), rotation=30, horizontalalignment='right')
     
     plt.savefig(data_stream, format='png', bbox_inches="tight", dpi = 80)
@@ -277,9 +280,9 @@ def plot_enrollment(data: list[dict], course: str) -> io.BytesIO:
 
     return data_stream
 
-## Temporary placement
+## Parse the time given into seconds format
 def parse_times(time):
-    pass
+    return get_seconds(parse(time))
 
 ## Loads the config json file.
 # Returns a dictionary in the form

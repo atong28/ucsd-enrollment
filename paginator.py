@@ -36,4 +36,4 @@ class MultiPage(commands.Cog):
             disable_on_timeout=True, 
             timeout=180
         )
-        await paginator.respond(ctx.interaction, ephemeral=False)
+        await paginator.respond(ctx, ephemeral=False)
