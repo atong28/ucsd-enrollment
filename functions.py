@@ -31,15 +31,15 @@ TIMES = [
 
 # Enrollment times for 2024 Winter
 TIMES_NEW = [
-    datetime(2023, 11, 6, 8),  # first pass prio + seniors [0]
-    datetime(2023, 11, 8, 8),  # first pass juniors [1]
-    datetime(2023, 11, 9, 8),  # first pass sophomores [2]
-    datetime(2023, 11, 10, 8), # first pass freshmen [3]
-    datetime(2023, 11, 13, 8), # second pass prio + seniors [4]
-    datetime(2023, 11, 15, 8), # second pass juniors [5]
-    datetime(2023, 11, 16, 8), # second pass sophomores [6]
-    datetime(2023, 11, 17, 8), # second pass freshmen [7]
-    datetime(2023, 11, 19),    # enrollment ends [8]
+    datetime(2023, 11, 14, 8), # first pass prio + seniors [0]
+    datetime(2023, 11, 16, 8), # first pass juniors [1]
+    datetime(2023, 11, 17, 8), # first pass sophomores [2]
+    datetime(2023, 11, 18, 8), # first pass freshmen [3]
+    datetime(2023, 11, 21, 8), # second pass prio + seniors [4]
+    datetime(2023, 11, 23, 8), # second pass juniors [5]
+    datetime(2023, 11, 24, 8), # second pass sophomores [6]
+    datetime(2023, 11, 25, 8), # second pass freshmen [7]
+    datetime(2023, 11, 27),    # enrollment ends [8]
     datetime(2024, 1, 3),      # classes start [9]
     datetime(2024, 1, 20)      # deadline to enroll/add [10]
 ]
@@ -161,11 +161,11 @@ def get_overview(data: list, course: str, enrollment_times: tuple) -> dict:
     else:
         # if capacity is reached after second pass enrollment time
         if get_seconds(capacity_time) > sptime:
-            embed.add_field(name='Capacity', value=f'Capacity reached after your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can wait to second pass this course.', inline=False)
+            embed.add_field(name='Capacity', value=f'Capacity reached after your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nAt latest, you can second pass this course.', inline=False)
             rec = 2
         # if capacity is reached before second pass enrollment time but after first pass enrollment time
         elif fptime < get_seconds(capacity_time) <= sptime:
-            embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can first pass this course, but\nit is unlikely that you can enroll second pass.\n{wl_msg}', inline=False)
+            embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can enroll first pass, but\nit is unlikely that you can enroll second pass.\n{wl_msg}', inline=False)
             rec = 1
         # if capacity is reached before first pass enrollment time
         else:

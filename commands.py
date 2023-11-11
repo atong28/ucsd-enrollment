@@ -8,8 +8,8 @@ from datetime import datetime
 
 bot = discord.Bot()
 
-@bot.slash_command(name = 'verbose', 
-                   description = 'Look up statistics about a class. Usage: /lookup classes:ECE 35, CSE 11, BILD 4', 
+'''@bot.slash_command(name = 'verbose', 
+                   description = 'Look up statistics about a class. Usage: /verbose classes:ECE 35, CSE 11, BILD 4', 
                    guild_ids=GUILD_IDS)
 
 async def verbose(interaction, classes: str):
@@ -55,7 +55,7 @@ async def verbose(interaction, classes: str):
         msg = paginator.MultiPage(bot)
         msg.set_pages(results)
         await msg.paginate(interaction)
-
+'''
 @bot.slash_command(name = 'query', 
                    description = 'Provide a list of classes and see enrollment recommendations.', 
                    guild_ids=GUILD_IDS)
