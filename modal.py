@@ -13,8 +13,8 @@ class OverviewInputModal(discord.ui.Modal):
         self.bot = bot
 
         self.add_item(discord.ui.InputText(label="Class List (comma separated)", style=discord.InputTextStyle.short))
-        self.add_item(discord.ui.InputText(label="First Pass Enrollment Time (date, time, in PT)", style=discord.InputTextStyle.short))
-        self.add_item(discord.ui.InputText(label="Second Pass Enrollment Time (date, time, in PT)", style=discord.InputTextStyle.short))
+        self.add_item(discord.ui.InputText(label="First Pass Enrollment Time", style=discord.InputTextStyle.short))
+        self.add_item(discord.ui.InputText(label="Second Pass Enrollment Time", style=discord.InputTextStyle.short))
 
     async def callback(self, interaction: discord.Interaction):
         courses = list(map(str.strip, self.children[0].value.split(',')))
