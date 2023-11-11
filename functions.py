@@ -139,7 +139,7 @@ def get_overview(data: list, course: str, enrollment_times: tuple) -> dict:
             embed.add_field(name='Second Pass', value=f'Approximately **{curr_data["enrolled"] * 100 // curr_data["total"]}%** full.', inline=True)
             if curr_data['waitlisted'] > 0:
                 if curr_data['waitlisted'] * 0.1 < curr_data['total']:
-                    wl_msg = 'It is **likely** to get in through waitlist.'
+                    wl_msg = 'It is **likely** to get in through waitlist, unless the class is a college writing program.'
                     wl_rec = 0
                 elif curr_data['waitlisted'] * 0.15 < curr_data['total']:
                     wl_msg = 'It is **possible** to get in through waitlist.'
@@ -161,11 +161,11 @@ def get_overview(data: list, course: str, enrollment_times: tuple) -> dict:
     else:
         # if capacity is reached after second pass enrollment time
         if get_seconds(capacity_time) > sptime:
-            embed.add_field(name='Capacity', value=f'Capacity reached after your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nAt latest, you can second pass this course.', inline=False)
+            embed.add_field(name='Capacity', value=f'Capacity reached after your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nAt latest, you can second pass this course, but desired sections may be unavailable.', inline=False)
             rec = 2
         # if capacity is reached before second pass enrollment time but after first pass enrollment time
         elif fptime < get_seconds(capacity_time) <= sptime:
-            embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can first pass this course, but you may not be able to enroll second pass.\n{wl_msg}', inline=False)
+            embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can first pass this course, but you will likely have to waitlist the course in second pass.\n{wl_msg}', inline=False)
             rec = 1
         # if capacity is reached before first pass enrollment time
         else:
