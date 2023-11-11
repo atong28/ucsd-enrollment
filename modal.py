@@ -13,8 +13,8 @@ class OverviewInputModal(discord.ui.Modal):
         self.bot = bot
 
         self.add_item(discord.ui.InputText(label="Class List (comma separated)", style=discord.InputTextStyle.short))
-        self.add_item(discord.ui.InputText(label="First Pass Enrollment Time", style=discord.InputTextStyle.short))
-        self.add_item(discord.ui.InputText(label="Second Pass Enrollment Time", style=discord.InputTextStyle.short))
+        self.add_item(discord.ui.InputText(label="First Pass Enrollment Time (date, time, in PT)", style=discord.InputTextStyle.short))
+        self.add_item(discord.ui.InputText(label="Second Pass Enrollment Time (date, time, in PT)", style=discord.InputTextStyle.short))
 
     async def callback(self, interaction: discord.Interaction):
         courses = list(map(str.strip, self.children[0].value.split(',')))
@@ -39,7 +39,7 @@ class OverviewInputModal(discord.ui.Modal):
             
         if not classes:
             em = discord.Embed(title='No results found!', description='Please check your spelling(s) and make sure the classes are properly comma-separated.')
-            em.add_field(name='Usage', value='`/lookup classes:ECE 35, CSE 11, BILD 4`')
+            em.add_field(name='Usage', value='`/query`')
             em.add_field(name='Your Query', value=f'`{classes}`')
             await interaction.respond(embed=em)
             return
