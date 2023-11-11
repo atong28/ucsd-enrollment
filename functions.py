@@ -156,7 +156,7 @@ def get_overview(data: list, course: str, enrollment_times: tuple) -> dict:
             full_capacity = True
 
     if not full_capacity:
-        embed.add_field(name='Capacity', value=f'Capacity is never reached.\nYou can wait to second pass this course.\n{wl_msg}', inline=False)
+        embed.add_field(name='Capacity', value=f'Capacity is never reached. You can wait to second pass this course, but desired sections may be unavailable.\n{wl_msg}', inline=False)
         rec = 3
     else:
         # if capacity is reached after second pass enrollment time
@@ -165,11 +165,19 @@ def get_overview(data: list, course: str, enrollment_times: tuple) -> dict:
             rec = 2
         # if capacity is reached before second pass enrollment time but after first pass enrollment time
         elif fptime < get_seconds(capacity_time) <= sptime:
+<<<<<<< Updated upstream
             embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can enroll first pass, but\nit is unlikely that you can enroll second pass.\n{wl_msg}', inline=False)
             rec = 1
         # if capacity is reached before first pass enrollment time
         else:
             embed.add_field(name='Capacity', value=f'Capacity reached before your first pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou likely cannot first pass this course.\n{wl_msg}', inline=False)
+=======
+            embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can first pass this course, but you may not be able to enroll second pass.\n{wl_msg}', inline=False)
+            rec = 1
+        # if capacity is reached before first pass enrollment time
+        else:
+            embed.add_field(name='Capacity', value=f'Capacity reached before your first pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou may not be able to first pass this course.\n{wl_msg}', inline=False)
+>>>>>>> Stashed changes
             rec = 0
 
     result = {
