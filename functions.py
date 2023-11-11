@@ -100,7 +100,7 @@ def new_to_old(enrollment_time: int) -> int:
 ## Converts an old enrollment time (1 year ago) to a new enrollment time
 # Returns the new time, in seconds
 def old_to_new(enrollment_time: int) -> int:
-    return enrollment_time + (SECONDS[0] - SECONDS_NEW[0])
+    return enrollment_time + (SECONDS_NEW[0] - SECONDS[0])
 
 ## Summarizes data and returns an overview embed with additional recommendations
 # Returns a dictionary in the following format:
@@ -161,15 +161,15 @@ def get_overview(data: list, course: str, enrollment_times: tuple) -> dict:
     else:
         # if capacity is reached after second pass enrollment time
         if get_seconds(capacity_time) > sptime:
-            embed.add_field(name='Capacity', value=f'Capacity reached after your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nAt latest, you can second pass this course, but desired sections may be unavailable.', inline=False)
+            embed.add_field(name='Capacity', value=f'Expected to hit capacity after your second pass (on {datetime.utcfromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nAt latest, you can second pass this course, but desired sections may be unavailable.', inline=False)
             rec = 2
         # if capacity is reached before second pass enrollment time but after first pass enrollment time
         elif fptime < get_seconds(capacity_time) <= sptime:
-            embed.add_field(name='Capacity', value=f'Capacity reached before your second pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can first pass this course, but you will likely have to waitlist the course in second pass.\n{wl_msg}', inline=False)
+            embed.add_field(name='Capacity', value=f'Expected to hit capacity before your second pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou can first pass this course, but you will likely have to waitlist the course in second pass.\n{wl_msg}', inline=False)
             rec = 1
         # if capacity is reached before first pass enrollment time
         else:
-            embed.add_field(name='Capacity', value=f'Capacity reached before your first pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou may not be able to first pass this course.\n{wl_msg}', inline=False)
+            embed.add_field(name='Capacity', value=f'Expected to hit capacity before your first pass (on {datetime.fromtimestamp(old_to_new(get_seconds(capacity_time)))}).\nYou may not be able to first pass this course.\n{wl_msg}', inline=False)
             rec = 0
 
     result = {
