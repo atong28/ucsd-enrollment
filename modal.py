@@ -72,8 +72,11 @@ class OverviewInputModal(discord.ui.Modal):
         waitlist = []
         drop = []
 
+        has_priority_wl = []
+
         for course in classes:
-        
+            if "CSE" in course:
+                has_priority_wl.append(course)
             # read course data
             filepath = f'../csv/{course}.csv'
             data = readcsv(filepath)
@@ -127,9 +130,9 @@ class OverviewInputModal(discord.ui.Modal):
         if fp_only:
             rec.append(f'You should enroll first pass the following courses:\n**{", ".join(fp_only)}**')
         if sp_only:
-            rec.append(f'You should enroll second pass the following courses:\n**{", ".join(sp_only)}**')
+            rec.append(f'You can second pass the following courses:\n**{", ".join(sp_only)}**')
         if waitlist:
-            rec.append(f'You should waitlist the following courses:\n**{", ".join(waitlist)}**')
+            rec.append(f'You may need to waitlist the following courses:\n**{", ".join(waitlist)}**')
         if anytime:
             rec.append(f'You can always enroll in the following courses:\n**{", ".join(anytime)}**')
         if drop:
@@ -137,6 +140,8 @@ class OverviewInputModal(discord.ui.Modal):
         main_em.add_field(name='Recommendations', value='\n\n'.join(rec), inline=False)
         if unreadable:
             main_em.add_field(name='Invalid Classes', value=f'**{", ".join(unreadable)}**', inline=False)
+        if has_priority_wl:
+            main_em.add_field(name='Waitlist Priority', value=f"You selected one or more classes which may have major priority ({', '.join(has_priority_wl)}), which means that you may not need to first pass it if you are in the department's major. Please refer to the department's website for more details.")
         msg = paginator.MultiPage(self.bot)
         msg.set_pages(results)
         await msg.paginate(interaction)
