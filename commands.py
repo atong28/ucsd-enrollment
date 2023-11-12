@@ -57,8 +57,7 @@ async def verbose(interaction, classes: str):
         await msg.paginate(interaction)
 '''
 @bot.slash_command(name = 'query', 
-                   description = 'Provide a list of classes and see enrollment recommendations.', 
-                   guild_ids=GUILD_IDS)
+                   description = 'Provide a list of classes and see enrollment recommendations.')
 
 async def query(interaction):
     await interaction.response.send_modal(modal.OverviewInputModal(bot, title='Input Details'))

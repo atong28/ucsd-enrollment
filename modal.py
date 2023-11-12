@@ -25,18 +25,19 @@ class OverviewInputModal(discord.ui.Modal):
         # check if course is readable; first collapse all spaces and go to uppercase
             course = c.replace(' ', '').upper()
 
-            # if unreadable, skip
-            if not os.path.exists(f'../csv/{course}.csv'):
-                unreadable.append(c)
-                continue
-
             # reformat to add the space back
             for i in range(2, 5):
                 if course[:i].isalpha() and course[i].isdigit():
                     course = course[:i] + ' ' + course[i:]
+                    # if unreadable, skip
+                    if not os.path.exists(f'../csv/{course}.csv'):
+                        print(f'../csv/{course}.csv')
+                        unreadable.append(c)
+                        continue
                     classes.append(course)
                     break
-            
+        print(unreadable)
+        print(classes)
         if len(classes)==0:
             em = discord.Embed(title='No results found!', description='Please check your spelling(s) and make sure the classes are properly comma-separated. If this class was not offered last year winter quarter, it will not show up here.')
             em.add_field(name='Usage', value='`/query`')
