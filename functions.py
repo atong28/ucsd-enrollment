@@ -134,9 +134,9 @@ def get_overview(data: list, course: str, enrollment_times: tuple) -> dict:
         
         # show recommendations
         if prev_data['seconds'] < fptime <= curr_data['seconds']:
-            embed.add_field(name='First Pass', value=f'Approximately **{curr_data["enrolled"] * 100 // curr_data["total"]}%** full.', inline=True)
+            embed.add_field(name='First Pass', value=f'Enrolled/Total: **{curr_data["enrolled"]}/{curr_data["total"]}**', inline=True)
         elif prev_data['seconds'] < sptime <= curr_data['seconds']:
-            embed.add_field(name='Second Pass', value=f'Approximately **{curr_data["enrolled"] * 100 // curr_data["total"]}%** full.', inline=True)
+            embed.add_field(name='Second Pass', value=f'Enrolled/Total: **{curr_data["enrolled"]}/{curr_data["total"]}**', inline=True)
             if curr_data['waitlisted'] > 0:
                 if curr_data['waitlisted'] * 0.1 < curr_data['total']:
                     wl_msg = 'It is **likely** to get in through waitlist, unless the class is a college writing program.'
@@ -209,9 +209,9 @@ def get_info(data: list, course: str, standing: int) -> discord.Embed:
         # print milestones
         if period < len(TIMES_TO_STR) and prev_data['seconds'] < SECONDS[period] < curr_data['seconds']:
             if period == standing + 1 or period == standing + 5:
-                embed.add_field(name=f'{TIMES_TO_STR[period-1]}', value=f'START | Enrolled: {prev_period_data["enrolled"]}/{prev_period_data["total"]} ({prev_period_data["enrolled"] * 100 // prev_period_data["total"]}%) Waitlisted: {prev_period_data["waitlisted"]}\nEND | Enrolled: {curr_data["enrolled"]}/{curr_data["total"]} ({curr_data["enrolled"] * 100 // curr_data["total"]}%) Waitlisted: {curr_data["waitlisted"]}', inline=False)
+                embed.add_field(name=f'{TIMES_TO_STR[period-1]}', value=f'START | Enrolled: {prev_period_data["enrolled"]}/{prev_period_data["total"]}; Waitlisted: {prev_period_data["waitlisted"]}\nEND | Enrolled: {curr_data["enrolled"]}/{curr_data["total"]}; Waitlisted: {curr_data["waitlisted"]}', inline=False)
             elif 8 <= period <= 10:
-                embed.add_field(name=f'{TIMES_TO_STR[period]}', value=f'Enrolled: {curr_data["enrolled"]}/{curr_data["total"]} ({curr_data["enrolled"] * 100 // curr_data["total"]}%) Waitlisted: {curr_data["waitlisted"]}', inline=False)
+                embed.add_field(name=f'{TIMES_TO_STR[period]}', value=f'Enrolled: {curr_data["enrolled"]}/{curr_data["total"]}; Waitlisted: {curr_data["waitlisted"]}', inline=False)
             prev_period_data = curr_data
             period += 1
 
